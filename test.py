@@ -1,11 +1,13 @@
 
+import sys
+
 from donodo.docker import DockerImage
 from donodo.zenodo import *
 
-di = DockerImage("colomoto/colomoto-docker:2020-08-01")
-
+di = DockerImage(sys.argv[1])
 zs = ZenodoSession(os.getenv("ZENODO_TOKEN"))
-zd = ZenodoImageDeposition(zs, di, publication_date=di.tag)
-
-print(di.labels)
-print("ok")
+zd = ZenodoImageDeposition(zs, di)
+if True or not zd.image_deposit:
+    with di.save() as fp:
+        zd.put_image(fp.stdout)
+print(zd.edit_link)

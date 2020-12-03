@@ -15,5 +15,5 @@ setup(name="donodo",
     },
     install_requires = [
         "requests",
-        ]
+    ]
 )

@@ -2,18 +2,14 @@
 import json
 import os
 import platform
-import subprocess
+from subprocess import DEVNULL, call, Popen, PIPE
 import sys
-
-from .ui import error
 
 on_linux = platform.system() == "Linux"
 
-DEVNULL = subprocess.DEVNULL if hasattr(subprocess, "DEVNULL") else open(os.devnull, 'w')
-
 def check_cmd(argv):
     try:
-        subprocess.call(argv, stdout=DEVNULL, stderr=DEVNULL, close_fds=True)
+        call(argv, stdout=DEVNULL, stderr=DEVNULL, close_fds=True)
         return True
     except:
         return False
@@ -60,10 +56,13 @@ class DockerImage(object):
             error("The Docker image tag should be a proper version (not latest)")
         self.name = name
         self.tag = tag
-        with subprocess.Popen(docker_argv + ["inspect",
-                f"{self.name}:{self.tag}"], stdout=subprocess.PIPE) as p:
+        self.spec = spec
+        with Popen(docker_argv + ["inspect", self.spec], stdout=PIPE) as p:
             inspect = json.load(p.stdout)
         if not inspect:
             sys.exit(1)
         self.inspect = inspect[0]
-        self.labels = self.inspect["Config"]["Labels"]
+        self.labels = self.inspect["Config"]["Labels"] or {}
+
+    def save(self):
+        return Popen(docker_argv + ["save", self.spec], stdout=PIPE)
