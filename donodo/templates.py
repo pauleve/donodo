@@ -20,7 +20,7 @@ deposition_templates = {
     <p>The image can be imported using the command <code>docker load</code> with
     the image file:</p>
 <pre>
-<code>docker load image.tar.gz</code></pre>
+<code>docker load -i image.tar.gz</code></pre>
 
 <p>or with the <code>donodo</code> command  available at <a
 href="https://github.com/pauleve/donodo">https://github.com/pauleve/donodo</a>:</p>
