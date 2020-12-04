@@ -3,12 +3,13 @@ import json
 import gzip
 import logging
 import os
+from subprocess import Popen, PIPE
 import sys
 
-from gzip_stream import GZIPCompressedStream
 import requests
 
 from donodo.templates import deposition_templates, eval_template
+from donodo import config
 
 logger = logging.getLogger(__name__)
 
@@ -114,19 +115,43 @@ class ZenodoImageDeposition(ZenodoDeposition):
 
     @property
     def image_deposit(self):
-        existing = [f for f in self.list_files()
-                        if f["filename"] == self.image_filename]
-        if existing:
-            return existing[0]
+        return [f for f in self.list_files()
+                        if f["filename"].startswith(self.image_filename)]
 
     def put_image(self, fp):
         existing = self.image_deposit
         if existing:
             logger.info("Image file already exists, deleting first..")
-            self.zs.delete(f"/files/{existing['id']}")
+            for f in existing:
+                self.zs.delete(f"/files/{f['id']}")
+
         print("Uploading image, this may take a while...")
-        #fp = GZIPCompressedStream(fp, compression_level=6)
-        self.put_file(self.image_filename, fp)
+
+        if config.deposition_compression == "gzstream":
+            from gzip_stream import GZIPCompressedStream
+            fp = GZIPCompressedStream(fp, compression_level=6)
+            self.put_file(self.image_filename+".gz", fp)
+
+        elif config.deposition_compression == "gz":
+            import gzip
+            import shutil
+            import tempfile
+            with tempfile.TemporaryFile() as tmpfp:
+                with gzip.GzipFile(mode="wb", fileobj=tmpfp) as gzfp:
+                    shutil.copyfileobj(fp, gzfp)
+                tmpfp.seek(0)
+                self.put_file(self.image_filename+".gz", tmpfp)
+
+        elif config.deposition_compression == "gzip-pipe":
+            # TODO ensure gzip command exists
+            gzip = Popen(["gzip", "-c"], stdin=fp, stdout=PIPE)
+            with gzip.stdout:
+                self.put_file(self.image_filename+".gz", gzip.stdout)
+            gzip.wait()
+
+        else:
+            self.put_file(self.image_filename, fp)
+
         print("Done!")
 
 
