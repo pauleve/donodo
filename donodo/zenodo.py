@@ -176,14 +176,18 @@ class ZenodoImageDeposition(ZenodoDeposition):
 class ZenodoRecord(object):
     def __init__(self, zs, doi):
         doi = urlparse(doi).path.strip('/')
-        r = zs.get("/records", params={"q": "doi:{}".format(doi.replace('/','\\/')),
-                "all_versions": 1})
-        matches = r["hits"]["hits"]
-        if not matches:
-            raise KeyError(f"No Zenodo record for DOI {doi}")
-        assert len(matches) == 1
-        self.record = matches[0]
-        self.doi = doi
+        if doi.startswith("record/"): # this is actually a record url
+            record_id = doi.split("/")[1]
+            self.record = zs.get(f"/records/{record_id}")
+        else:
+            r = zs.get("/records", params={"q": "doi:{}".format(doi.replace('/','\\/')),
+                    "all_versions": 1})
+            matches = r["hits"]["hits"]
+            if not matches:
+                raise KeyError(f"No Zenodo record for DOI {doi}")
+            assert len(matches) == 1
+            self.record = matches[0]
+        self.doi = self.record["doi"]
 
 
 class ZenodoImageRecord(ZenodoRecord):
