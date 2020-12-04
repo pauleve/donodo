@@ -53,6 +53,8 @@ def cli():
         description="Docker <-> Zenodo")
     parser.add_argument("--debug", default="INFO",
                 choices={"DEBUG", "INFO", "WARNING", "ERROR"})
+    parser.add_argument("--sandbox", action="store_true", default=False,
+            help="Use the sandbox of Zenodo")
     subp = parser.add_subparsers(help="command")
 
     p = subp.add_parser("pull",
@@ -75,6 +77,7 @@ def cli():
     args = parser.parse_args()
 
     logger.setLevel(args.debug)
+    use_sandbox(args.sandbox)
 
     if not hasattr(args, "func"):
         return parser.print_help()

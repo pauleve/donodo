@@ -15,6 +15,12 @@ from donodo import config
 
 logger = logging.getLogger(__name__)
 
+def use_sandbox(sandbox):
+    if sandbox:
+        ZenodoSession.base_url = "https://sandbox.zenodo.org/api"
+    else:
+        ZenodoSession.base_url = "https://zenodo.org/api"
+
 class ZenodoSession(object):
     base_url = "https://sandbox.zenodo.org/api"
 
