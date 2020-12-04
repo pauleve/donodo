@@ -4,7 +4,7 @@ def eval_template(fmt, **env):
         return [eval_template(f, **env) for f in fmt]
     if isinstance(fmt, dict):
         return {k: eval_template(v, **env) for k,v in fmt.items()}
-    return eval(f'f"{fmt}"', env)
+    return eval(f'f"""{fmt}"""', env)
 
 deposition_templates = {
     "upload_type": "other",
@@ -15,5 +15,18 @@ deposition_templates = {
     "version": "{image.tag}",
     "publication_date": "{image.labels.get('org.label-schema.build-date', image.inspect['Created'])[:10]}",
     "keywords": ["docker image"],
-    "description": """TODO""",
+    "description": """<p>This record contains an exportation of the Docker image
+    <strong>{image.name}:{image.tag}</strong>.</p>
+    <p>The image can be imported using the command <code>docker load</code> with
+    the image file:</p>
+<pre>
+<code>docker load image.tar.gz</code></pre>
+
+<p>or with the <code>donodo</code> command  available at <a
+href="https://github.com/pauleve/donodo">https://github.com/pauleve/donodo</a>:</p>
+<pre>
+<code>pip install -U donodo
+donodo pull [DOI]</code></pre>
+
+""",
 }
