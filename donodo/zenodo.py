@@ -5,6 +5,8 @@ import logging
 import os
 from subprocess import Popen, PIPE
 import sys
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 import requests
 
@@ -16,15 +18,16 @@ logger = logging.getLogger(__name__)
 class ZenodoSession(object):
     base_url = "https://sandbox.zenodo.org/api"
 
-    def __init__(self, token):
-        self.token = token
+    def __init__(self, token=None, session=None):
+        self.session = requests.Session() if session is None else session
+        if token:
+            self.session.params["access_token"] = token
 
-    def request(self, method, url="", params={}, raw_url=False, **kwargs):
-        params["access_token"] = self.token
+    def request(self, method, url="", raw_url=False, **kwargs):
         if not raw_url:
             url = self.base_url + url
         logger.debug((url, kwargs))
-        ret = getattr(requests, method)(url, params=params, **kwargs)
+        ret = getattr(self.session, method)(url, **kwargs)
         if ret.status_code != 204:
             ret = ret.json()
         if isinstance(ret, dict) and ret.get("status",0) >= 400:
@@ -41,10 +44,13 @@ class ZenodoSession(object):
     def delete(self, *args, **kwargs):
         return self.request("delete", *args, **kwargs)
 
+class ZenodoAnonymousSession(ZenodoSession):
+    def __init__(self):
+        super().__init__(None)
 
 class ZenodoSubSession(ZenodoSession):
     def __init__(self, parent, subpath):
-        super().__init__(parent.token)
+        super().__init__(session=parent.session)
         self.base_url = parent.base_url + subpath
 
 
@@ -71,12 +77,10 @@ class ZenodoDeposition(object):
 
     def put_file(self, filename, fp):
         bucket = self.deposit["links"]["bucket"]
-        headers = {"Accept": "application/json", "Content-Type": "application/octet-stream"}
-        return self.zs.put(f"{bucket}/{filename}", raw_url=True,
-                    data={"file": fp}, headers=headers)
+        return self.zs.put(f"{bucket}/{filename}", raw_url=True, data=fp)
 
     def publish(self):
-        self.deposit = self.post("/actions/publish")
+        self.deposit = self.zs.post("/actions/publish")
         return self.deposit["doi_url"]
 
 class ZenodoImageDeposition(ZenodoDeposition):
@@ -86,20 +90,18 @@ class ZenodoImageDeposition(ZenodoDeposition):
         _meta = {entry: eval_template(tmpl, image=image)
             for entry, tmpl in deposition_templates.items()}
         _meta.update(metadata)
-        if "keywords" in _meta:
-            _meta["keywords"] = [k.strip() for k in _meta["keywords"].split(";")]
 
         title = _meta["title"]
         version = _meta["version"]
 
-        matches = zs.get("/deposit/depositions", {"q": f'"{title}"'})
+        matches = zs.get("/deposit/depositions", params={"q": f'"{title}"'})
         matches = [m for m in matches if m["title"] == title]
         if not matches:
             logger.info("no matching deposition, create new")
-            deposit = zs.post("/deposit/depositions", {}, json={})
+            deposit = zs.post("/deposit/depositions", json={})
         else:
             p = matches[0]
-            matches = zs.get("/deposit/depositions", { "q":
+            matches = zs.get("/deposit/depositions", params={ "q":
                 f"conceptrecid:{p['conceptrecid']} AND version:{version}",
                 "all_versions": 1})
             if matches:
@@ -133,7 +135,6 @@ class ZenodoImageDeposition(ZenodoDeposition):
             self.put_file(self.image_filename+".gz", fp)
 
         elif config.deposition_compression == "gz":
-            import gzip
             import shutil
             import tempfile
             with tempfile.TemporaryFile() as tmpfp:
@@ -144,10 +145,10 @@ class ZenodoImageDeposition(ZenodoDeposition):
 
         elif config.deposition_compression == "gzip-pipe":
             # TODO ensure gzip command exists
-            gzip = Popen(["gzip", "-c"], stdin=fp, stdout=PIPE)
-            with gzip.stdout:
-                self.put_file(self.image_filename+".gz", gzip.stdout)
-            gzip.wait()
+            gz = Popen(["gzip", "-c"], stdin=fp, stdout=PIPE)
+            with gz.stdout:
+                self.put_file(self.image_filename+".gz", gz.stdout)
+            gz.wait()
 
         else:
             self.put_file(self.image_filename, fp)
@@ -157,18 +158,41 @@ class ZenodoImageDeposition(ZenodoDeposition):
 
 class ZenodoRecord(object):
     def __init__(self, zs, doi):
-        matches = zs.get("/records", {"q": f"doi:{doi.replace('/','//')}"})
+        doi = urlparse(doi).path.strip('/')
+        r = zs.get("/records", params={"q": "doi:{}".format(doi.replace('/','\\/')),
+                "all_versions": 1})
+        matches = r["hits"]["hits"]
         if not matches:
-            logger.critical("No Zenodo record for DOI {doi}")
-            sys.exit(1)
+            raise KeyError(f"No Zenodo record for DOI {doi}")
         assert len(matches) == 1
         self.record = matches[0]
+        self.doi = doi
+        print(json.dumps(self.record, indent=2))
 
-    def list_files(self):
-        pass
-
-    def entry(self):
-        pass
 
 class ZenodoImageRecord(ZenodoRecord):
-    pass
+    def __init__(self, zs, doi):
+        super().__init__(zs, doi)
+        self.image_file = self._locate_image()
+        print(json.dumps(self.image_file, indent=2))
+
+    def _locate_image(self):
+        files = self.record["files"]
+        # 1. find a filename starting with image.tar
+        images = [f for f in files if f["key"].startswith("image.tar")]
+        if not images:
+            # 2. find a filename contains .tar
+            images = [f for f in files if ".tar" in f["key"]]
+        if not images:
+            raise KeyError(f"Zenodo record {self.doi} does not contain a Docker image")
+        assert len(images) == 1, "multiple image candidates!"
+        return images[0]
+
+    def open(self):
+        url = self.image_file["links"]["self"]
+        logger.info(f"Downloading {url}")
+        fp = urlopen(url)
+        if self.image_file["type"] == "gz":
+            print("gz")
+            fp = gzip.GzipFile(fileobj=fp)
+        return fp

@@ -2,6 +2,7 @@
 import json
 import os
 import platform
+import shutil
 from subprocess import DEVNULL, call, Popen, PIPE
 import sys
 
@@ -66,3 +67,8 @@ class DockerImage(object):
 
     def save(self):
         return Popen(docker_argv + ["save", self.spec], stdout=PIPE)
+
+def docker_load(fp):
+    with Popen(docker_argv + ["load"], stdin=PIPE) as p:
+        shutil.copyfileobj(fp, p.stdin)
+    return p.returncode
