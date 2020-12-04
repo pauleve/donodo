@@ -24,3 +24,7 @@ donodo push your/image:tag
 ```
 
 See `donodo push -h` for options.
+
+### Zenodo sandbox
+
+Use `donodo --sandbox` to act on the sandbox https://sandbox.zenodo.org.
