@@ -1,4 +1,12 @@
+[![PyPI version](https://badge.fury.io/py/donodo.svg)](https://badge.fury.io/py/donodo)
+
 # donodo - Bridging Docker images with Zenodo
+
+## Installation
+
+```sh
+pip install -U donodo
+```
 
 ## Quick usage guide
 
