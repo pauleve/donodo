@@ -96,6 +96,7 @@ class ZenodoImageDeposition(ZenodoDeposition):
 
         matches = zs.get("/deposit/depositions", params={"q": f'"{title}"'})
         matches = [m for m in matches if m["title"] == title]
+        clear_image = False
         if not matches:
             logger.info("no matching deposition, create new")
             deposit = zs.post("/deposit/depositions", json={})
@@ -107,27 +108,37 @@ class ZenodoImageDeposition(ZenodoDeposition):
             if matches:
                 # resume version
                 deposit = matches[0]
+            elif p["state"] == "unsubmitted":
+                # resume with different version
+                deposit = p
+                clear_image = True
             else:
                 # new version
                 p = zs.post(f"/deposit/depositions/{p['id']}/actions/newversion")
                 deposit = zs.get(p["links"]["latest_draft"], raw_url=True)
+                clear_image = True
         super().__init__(zs, deposit)
         self.update({"metadata": _meta})
         self.image = image
+        if clear_image:
+            self.delete_image()
 
     @property
     def image_deposit(self):
         return [f for f in self.list_files()
                         if f["filename"].startswith(self.image_filename)]
 
-    def put_image(self, fp):
+    def delete_image(self):
         existing = self.image_deposit
         if existing:
             logger.info("Image file already exists, deleting first..")
             for f in existing:
                 self.zs.delete(f"/files/{f['id']}")
 
-        print("Uploading image, this may take a while...")
+    def put_image(self, fp):
+        self.delete_image()
+
+        logger.info("Uploading image, this may take a while...")
 
         if config.deposition_compression == "gzstream":
             from gzip_stream import GZIPCompressedStream
@@ -153,7 +164,7 @@ class ZenodoImageDeposition(ZenodoDeposition):
         else:
             self.put_file(self.image_filename, fp)
 
-        print("Done!")
+        logger.info("Done!")
 
 
 class ZenodoRecord(object):
@@ -167,14 +178,12 @@ class ZenodoRecord(object):
         assert len(matches) == 1
         self.record = matches[0]
         self.doi = doi
-        print(json.dumps(self.record, indent=2))
 
 
 class ZenodoImageRecord(ZenodoRecord):
     def __init__(self, zs, doi):
         super().__init__(zs, doi)
         self.image_file = self._locate_image()
-        print(json.dumps(self.image_file, indent=2))
 
     def _locate_image(self):
         files = self.record["files"]
@@ -193,6 +202,5 @@ class ZenodoImageRecord(ZenodoRecord):
         logger.info(f"Downloading {url}")
         fp = urlopen(url)
         if self.image_file["type"] == "gz":
-            print("gz")
             fp = gzip.GzipFile(fileobj=fp)
         return fp
