@@ -146,12 +146,7 @@ class ZenodoImageDeposition(ZenodoDeposition):
 
         logger.info("Uploading image, this may take a while...")
 
-        if config.deposition_compression == "gzstream":
-            from gzip_stream import GZIPCompressedStream
-            fp = GZIPCompressedStream(fp, compression_level=6)
-            self.put_file(self.image_filename+".gz", fp)
-
-        elif config.deposition_compression == "gz":
+        if config.deposition_compression == "gz":
             import shutil
             import tempfile
             with tempfile.TemporaryFile() as tmpfp:
@@ -160,15 +155,8 @@ class ZenodoImageDeposition(ZenodoDeposition):
                 tmpfp.seek(0)
                 self.put_file(self.image_filename+".gz", tmpfp)
 
-        elif config.deposition_compression == "gzip-pipe":
-            # TODO ensure gzip command exists
-            gz = Popen(["gzip", "-c"], stdin=fp, stdout=PIPE)
-            with gz.stdout:
-                self.put_file(self.image_filename+".gz", gz.stdout)
-            gz.wait()
-
         else:
-            self.put_file(self.image_filename, fp)
+            raise ValueError(f"unknown compression method '{config.deposition_compression}'")
 
         logger.info("Done!")
 

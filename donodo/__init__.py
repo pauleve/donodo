@@ -68,7 +68,7 @@ def cli():
     p.add_argument("--auto-publish", action="store_true", default=False,
             help="Publish the record after upload")
     p.add_argument("--compression-mode", default="gz",
-            choices={"none", "gz", "gzstream", "gzip-pipe"},
+            choices={"gz"},
             help="Method for compressing the image")
     p.add_argument("--force-upload", action="store_true", default=False,
             help="Force image (re)upload")
