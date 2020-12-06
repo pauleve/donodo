@@ -35,7 +35,8 @@ def push(image, token, auto_publish=False, force_upload=False):
         auto_publish = answer.lower().startswith("y")
     if auto_publish:
         doi_link = zd.publish()
-        print(f"Docker image persistently published at {doi_link}")
+        print(f"Docker image {image} persistently published at:")
+        print(doi_link)
         return 0
     return 2
 
