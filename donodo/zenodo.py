@@ -38,7 +38,7 @@ class ZenodoSession(object):
             ret = ret.json()
         if isinstance(ret, dict) and ret.get("status",0) >= 400:
             logger.critical(ret)
-            sys.exit(1)
+            raise Exception(ret)
         return ret
 
     def get(self, *args, **kwargs):
@@ -64,8 +64,7 @@ class ZenodoDeposition(object):
     def __init__(self, zs, deposit):
         self.deposit = deposit
         if deposit["submitted"]:
-            logger.critical("The record for this image is already published")
-            sys.exit(1)
+            raise ValueError("The record for this image is already published")
         self.id = deposit["id"]
         self.zs = ZenodoSubSession(zs, f"/deposit/depositions/{self.id}")
 
