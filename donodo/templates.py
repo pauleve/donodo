@@ -1,4 +1,6 @@
 
+import json
+
 def eval_template(fmt, **env):
     if isinstance(fmt, list):
         return [eval_template(f, **env) for f in fmt]
@@ -30,3 +32,8 @@ donodo pull [DOI]</code></pre>
 
 """,
 }
+
+def custom_templates_from_json(jsonfile):
+    with open(jsonfile) as fp:
+        user_templates = json.load(fp)
+    deposition_templates.update(user_templates)

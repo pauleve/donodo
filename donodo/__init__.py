@@ -4,6 +4,7 @@ import os
 from .docker import *
 from .zenodo import *
 from donodo import config
+from donodo import templates
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,10 +27,10 @@ def push(image, token, auto_publish=False, force_upload=False):
             zd.put_image(p.stdout)
     else:
         logger.info("Image is already uploaded, skipping")
-    print()
-    print(zd.edit_link)
-    print()
     if not auto_publish:
+        print()
+        print(zd.edit_link)
+        print()
         answer = input("PUBLISH? (y/N) ")
         auto_publish = answer.lower().startswith("y")
     if auto_publish:
@@ -72,6 +73,8 @@ def cli():
             help="Method for compressing the image")
     p.add_argument("--force-upload", action="store_true", default=False,
             help="Force image (re)upload")
+    p.add_argument("--templates",
+            help="JSON file overriding templates for deposition")
     p.set_defaults(func="push")
 
     args = parser.parse_args()
@@ -91,6 +94,9 @@ def cli():
         # Configuration
         config.deposition_compression = args.compression_mode \
                 if args.compression_mode != "none" else None
+        # Templates
+        if args.templates:
+            templates.custom_templates_from_json(args.templates)
         # Push
         return push(args.image, token,
                 auto_publish=args.auto_publish,
