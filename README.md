@@ -49,8 +49,11 @@ The `donodo push` commands takes as additional argument the name of the Docker i
 The command will create a new record with the title being by default `Docker image {image_name}`. If such a record already exists, it will create a new version of it with the tag of the Docker image.
 Thus if you push several tags of the same image name, only a single record will be created, with different versions.
 
-Once the draft record has been created, the command will display the link to the draft and ask whether to publish. You can manually modify the record from the webpage if necessary before answering the question. 
-The option `--auto-publish` skips this question and prompty publishes the image.
+The Docker image is exported using the `docker save` command and compressed in a local temporary file. The file is then uploaded to the Zenodo record as `image.tar.gz`.
+
+Once the draft record has been created, the command will display the link to the draft and ask whether to publish it.
+You can modify the record from the webpage if necessary before answering the question. 
+The option `--auto-publish` skips this question and promptly publishes the image.
 
 Once published, the command will display its DOI link.
 
