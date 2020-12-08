@@ -95,6 +95,7 @@ class ZenodoImageDeposition(ZenodoDeposition):
         _meta = {entry: eval_template(tmpl, image=image)
             for entry, tmpl in deposition_templates.items()}
         _meta.update(metadata)
+        logger.debug(json.dumps(_meta, indent=2))
 
         title = _meta["title"]
         version = _meta["version"]

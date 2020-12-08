@@ -6,6 +6,9 @@ def eval_template(fmt, **env):
         return [eval_template(f, **env) for f in fmt]
     if isinstance(fmt, dict):
         return {k: eval_template(v, **env) for k,v in fmt.items()}
+    if not isinstance(fmt, str):
+        return fmt
+    fmt = fmt.replace('"""', '\\"\\"\\"')
     return eval(f'f"""{fmt}"""', env)
 
 deposition_templates = {
