@@ -43,7 +43,7 @@ def check_docker():
     if not check_cmd(["docker", "help"]):
         if not on_linux:
             raise Exception("""Docker not found.
-If you are using Docker Toolbox, make sure you are running 'colomoto-docker'
+If you are using Docker Toolbox, make sure you are running 'donodo'
 within the 'Docker quickstart Terminal'.""")
         else:
             raise Exception("Docker not found")
