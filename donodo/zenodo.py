@@ -199,6 +199,7 @@ class ZenodoImageRecord(ZenodoRecord):
         url = self.image_file["links"]["self"]
         logger.info(f"Downloading {url}")
         fp = urlopen(url)
-        if self.image_file["type"] == "gz":
-            fp = gzip.GzipFile(fileobj=fp)
+        if (("type" in self.image_file and self.image_file["type"] == "gz") or
+                self.image_file["key"].endswith(".gz")):
+                fp = gzip.GzipFile(fileobj=fp)
         return fp
