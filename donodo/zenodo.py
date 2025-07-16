@@ -34,7 +34,7 @@ class ZenodoSession(object):
             url = self.base_url + url
         logger.debug((url, kwargs))
         ret = getattr(self.session, method)(url, **kwargs)
-        if ret.status_code != 204:
+        if ret.status_code != requests.codes.no_content:
             ret = ret.json()
         if isinstance(ret, dict) and ret.get("status",0) >= 400:
             logger.critical(ret)
