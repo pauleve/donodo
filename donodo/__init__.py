@@ -40,12 +40,19 @@ def push(image, token, auto_publish=False, force_upload=False):
         return 0
     return 2
 
-def pull(doi):
+
+def doi_record(doi : str) -> ZenodoImageRecord:
+    zs = ZenodoAnonymousSession()
+    zr = ZenodoImageRecord(zs, doi)
+    return zr
+
+
+def pull(doi : str, zr : ZenodoImageRecord = None):
     """
     Retrieve a Docker image from a zenodo DOI
     """
-    zs = ZenodoAnonymousSession()
-    zr = ZenodoImageRecord(zs, doi)
+    if zr is None:
+        zr = doi_record(doi)
     with zr.open() as fp:
         return docker_load(fp)
 
