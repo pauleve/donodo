@@ -176,6 +176,7 @@ class ZenodoRecord(object):
             assert len(matches) == 1
             self.record = matches[0]
         self.doi = self.record["doi"]
+        self.notes = self.record["metadata"].get("notes", None)
 
 
 class ZenodoImageRecord(ZenodoRecord):

@@ -20,6 +20,7 @@ deposition_templates = {
     "version": "{image.tag}",
     "publication_date": "{image.labels.get('org.label-schema.build-date', image.inspect['Created'])[:10]}",
     "keywords": ["docker image"],
+    "notes": "{{ \"docker-id\" : \"{image.inspect['Id']}\", \"docker-image-name\" : \"{image.name}:{image.tag}\" }}",
     "description": """<p>This record contains an exportation of the Docker image
     <strong>{image.name}:{image.tag}</strong>.</p>
     <p>The image can be imported using the command <code>docker load</code> with
