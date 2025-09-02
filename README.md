@@ -1,4 +1,6 @@
 [![PyPI version](https://badge.fury.io/py/donodo.svg)](https://badge.fury.io/py/donodo)
+[![SWH](https://archive.softwareheritage.org/badge/origin/https://github.com/pauleve/donodo/)](https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/pauleve/donodo)
+[![SWH](https://archive.softwareheritage.org/badge/swh:1:dir:3c23b84c86526b41333c09093e56593028e3873b/)](https://archive.softwareheritage.org/swh:1:dir:3c23b84c86526b41333c09093e56593028e3873b)
 
 # donodo - Bridging Docker images with Zenodo
 
