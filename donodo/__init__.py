@@ -15,13 +15,14 @@ formatter = logging.Formatter('%(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-def push(image, token, auto_publish=False, force_upload=False):
+def push(image, token, auto_publish=False, force_upload=False,
+            conceptrecid=None):
     """
     Archive a docker image on Zenodo
     """
     di = DockerImage(image)
     zs = ZenodoSession(token)
-    zd = ZenodoImageDeposition(zs, di)
+    zd = ZenodoImageDeposition(zs, di, conceptrecid=conceptrecid)
     if force_upload or not zd.image_deposit:
         with di.save() as p:
             zd.put_image(p.stdout)
@@ -74,6 +75,8 @@ def cli():
     p = subp.add_parser("push",
             help="Push a Docker image into a new Zenodo record")
     p.add_argument("image", help="Docker image in the form <name>:<nag>")
+    p.add_argument("--conceptrecid", type=str,
+            help="Specify the Zenodo concept id to update")
     p.add_argument("--auto-publish", action="store_true", default=False,
             help="Publish the record after upload")
     p.add_argument("--compression-mode", default="gz",
@@ -108,7 +111,8 @@ def cli():
         # Push
         return push(args.image, token,
                 auto_publish=args.auto_publish,
-                force_upload=args.force_upload)
+                force_upload=args.force_upload,
+                conceptrecid=args.conceptrecid)
 
     if args.func == "pull":
         return pull(args.doi)

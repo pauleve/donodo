@@ -91,7 +91,7 @@ class ZenodoDeposition(object):
 class ZenodoImageDeposition(ZenodoDeposition):
     image_filename = "image.tar"
 
-    def __init__(self, zs, image, **metadata):
+    def __init__(self, zs, image, conceptrecid=None, **metadata):
         _meta = {entry: eval_template(tmpl, image=image)
             for entry, tmpl in deposition_templates.items()}
         _meta.update(metadata)
@@ -100,8 +100,17 @@ class ZenodoImageDeposition(ZenodoDeposition):
         title = _meta["title"]
         version = _meta["version"]
 
-        matches = zs.get("/deposit/depositions", params={"q": f'"{title}"'})
-        matches = [m for m in matches if m["title"] == title]
+        if conceptrecid:
+            query = {"q": f"conceptrecid:{conceptrecid}"}
+        else:
+            query = {"q": f'"{title}"'}
+
+        matches = zs.get("/deposit/depositions", params=query)
+
+        if not conceptrecid:
+            # ensure title matches exactly
+            matches = [m for m in matches if m["title"] == title]
+
         logger.debug(matches)
         clear_image = False
         if not matches:
@@ -111,7 +120,7 @@ class ZenodoImageDeposition(ZenodoDeposition):
             p = matches[0]
             if p["metadata"]["version"] != version:
                 matches = zs.get("/deposit/depositions", params={ "q":
-                    f"(conceptrecid:{p['conceptrecid']}) AND (version:\"{version}\")",
+                    f"conceptrecid:{p['conceptrecid']} AND metadata.version:\"{version}\"",
                     "all_versions": 1})
             if matches:
                 # resume version
