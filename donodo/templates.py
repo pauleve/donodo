@@ -29,9 +29,7 @@ deposition_templates = {
 <code>docker load -i image.tar.gz</code></pre>
 
 <p>or with the <code>donodo</code> command  available at <a
-href="https://github.com/pauleve/donodo">https://github.com/pauleve/donodo</a> (<a href="https://archive.softwareheritage.org/swh:1:dir:3c23b84c86526b41333c09093e56593028e3873b">
-    <img src="https://archive.softwareheritage.org/badge/swh:1:dir:3c23b84c86526b41333c09093e56593028e3873b/" alt="Archived | swh:1:dir:3c23b84c86526b41333c09093e56593028e3873b"/>
-</a>):</p>
+href="https://github.com/pauleve/donodo">https://github.com/pauleve/donodo</a> (<a href="https://archive.softwareheritage.org/swh:1:dir:3c23b84c86526b41333c09093e56593028e3873b">swh:1:dir:3c23b84c86526b41333c09093e56593028e3873b</a>):</p>
 <pre>
 <code>pip install -U donodo
 donodo pull [DOI]</code></pre>
