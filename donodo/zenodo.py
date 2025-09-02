@@ -102,24 +102,29 @@ class ZenodoImageDeposition(ZenodoDeposition):
 
         matches = zs.get("/deposit/depositions", params={"q": f'"{title}"'})
         matches = [m for m in matches if m["title"] == title]
+        logger.debug(matches)
         clear_image = False
         if not matches:
             logger.info("no matching deposition, create new")
             deposit = zs.post("/deposit/depositions", json={})
         else:
             p = matches[0]
-            matches = zs.get("/deposit/depositions", params={ "q":
-                f"conceptrecid:{p['conceptrecid']} AND version:{version}",
-                "all_versions": 1})
+            if p["metadata"]["version"] != version:
+                matches = zs.get("/deposit/depositions", params={ "q":
+                    f"(conceptrecid:{p['conceptrecid']}) AND (version:\"{version}\")",
+                    "all_versions": 1})
             if matches:
                 # resume version
+                logger.info("resume version deposition")
                 deposit = matches[0]
             elif p["state"] == "unsubmitted":
                 # resume with different version
+                logger.info("resume with different version")
                 deposit = p
                 clear_image = True
             else:
                 # new version
+                logger.info("resume with new version")
                 p = zs.post(f"/deposit/depositions/{p['id']}/actions/newversion")
                 deposit = zs.get(p["links"]["latest_draft"], raw_url=True)
                 clear_image = True
