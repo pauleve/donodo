@@ -182,8 +182,9 @@ class ZenodoRecord(object):
             record_id = doi.split("/")[1]
             self.record = zs.get(f"/records/{record_id}")
         else:
-            r = zs.get("/records", params={"q": "doi:{}".format(doi.replace('/','\\/')),
+            r = zs.get("/records", params={"q": f"doi:\"{doi}\"",
                     "all_versions": 1})
+            logger.debug(r)
             matches = r["hits"]["hits"]
             if not matches:
                 raise KeyError(f"No Zenodo record for DOI {doi}")

@@ -1,5 +1,6 @@
 
 import json
+import urllib.request
 
 def eval_template(fmt, **env):
     if isinstance(fmt, list):
@@ -38,6 +39,7 @@ donodo pull [DOI]</code></pre>
 }
 
 def custom_templates_from_json(jsonfile):
-    with open(jsonfile) as fp:
+    mopen = urllib.request.urlopen if jsonfile.startswith("https://") else open
+    with mopen(jsonfile) as fp:
         user_templates = json.load(fp)
     deposition_templates.update(user_templates)
