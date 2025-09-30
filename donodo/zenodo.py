@@ -176,27 +176,41 @@ class ZenodoImageDeposition(ZenodoDeposition):
 
 
 class ZenodoRecord(object):
-    def __init__(self, zs, doi):
+    def __init__(self, zs, doi, version = None, need_notes = False):
         doi = urlparse(doi).path.strip('/')
         if doi.startswith("record/"): # this is actually a record url
             record_id = doi.split("/")[1]
             self.record = zs.get(f"/records/{record_id}")
         else:
-            r = zs.get("/records", params={"q": f"doi:\"{doi}\"",
-                    "all_versions": 1})
-            logger.debug(r)
+            if version is None:
+                query = f"doi: {doi}"
+            elif version == "latest":
+                query = f"(conceptdoi: \"{doi}\")"
+            else:
+                query = f"(conceptdoi: \"{doi}\") AND (metadata.version: \"{version}\")"
+
+            r = zs.get("/records", params={"q": query, "sort" : "mostrecent", "all_versions": 1})
+            #logger.debug(r)
             matches = r["hits"]["hits"]
             if not matches:
-                raise KeyError(f"No Zenodo record for DOI {doi}")
-            assert len(matches) == 1
-            self.record = matches[0]
+                raise KeyError(f"No Zenodo record for DOI {doi} (version: {version})")
+            self.record = None
+            for m in matches:
+                if m["metadata"].get("notes", None) is not None:
+                    self.record = m
+                    break
+            if self.record is None:
+                raise KeyError(
+                    f"No Zenodo record for DOI {doi} (version: {version})")
         self.doi = self.record["doi"]
         self.notes = self.record["metadata"].get("notes", None)
+        if self.notes is None and need_notes:
+            raise Exception("no notes in metadata")
 
 
 class ZenodoImageRecord(ZenodoRecord):
-    def __init__(self, zs, doi):
-        super().__init__(zs, doi)
+    def __init__(self, zs, doi, version = None, need_notes = False):
+        super().__init__(zs, doi, version, need_notes)
         self.image_file = self._locate_image()
 
     def _locate_image(self):

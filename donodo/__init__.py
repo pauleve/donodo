@@ -42,9 +42,9 @@ def push(image, token, auto_publish=False, force_upload=False,
     return 2
 
 
-def doi_record(doi : str) -> ZenodoImageRecord:
+def doi_record(doi : str, version : str = None, need_notes : bool = False) -> ZenodoImageRecord:
     zs = ZenodoAnonymousSession()
-    zr = ZenodoImageRecord(zs, doi)
+    zr = ZenodoImageRecord(zs, doi, version, need_notes)
     return zr
 
 
